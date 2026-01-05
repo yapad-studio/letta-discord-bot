@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  yapad-discord-bot:
+    build: .
+    container_name: yapad-discord-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+    networks:
+      - yapad-net
+
+networks:
+  yapad-net:
+    driver: bridge
