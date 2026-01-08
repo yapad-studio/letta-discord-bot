@@ -370,6 +370,12 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
+  // Ignore messages containing @everyone or @here
+  if (message.mentions.everyone || message.content.includes('@everyone') || message.content.includes('@here')) {
+    console.log(`📩 Ignoring message containing @everyone or @here...`);
+    return;
+  }
+
   // 📨 Handle Direct Messages (DMs)
   if (message.guild === null) { // If no guild, it's a DM
     console.log(`📩 Received DM from ${message.author.username}: ${message.content}`);
