@@ -40,6 +40,8 @@ require("dotenv/config");
 var express_1 = require("express");
 var discord_js_1 = require("discord.js");
 var messages_1 = require("./messages");
+// Presence system imports
+var presences_1 = require("./commands/presences");
 console.log('🚀 Starting Discord bot...');
 console.log('📋 Environment check:');
 console.log('  - DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? '✓ Set' : '✗ Missing');
@@ -104,6 +106,8 @@ client.once('ready', function () { return __awaiter(void 0, void 0, void 0, func
         switch (_b.label) {
             case 0:
                 console.log("\uD83E\uDD16 Logged in as ".concat((_a = client.user) === null || _a === void 0 ? void 0 : _a.tag, "!"));
+                // Initialize presence system
+                (0, presences_1.initializePresenceSystem)(client);
                 if (MESSAGE_BATCH_ENABLED) {
                     console.log("\uD83D\uDCE6 Message batching enabled: ".concat(MESSAGE_BATCH_SIZE, " messages or ").concat(MESSAGE_BATCH_TIMEOUT_MS, "ms timeout"));
                 }
@@ -609,6 +613,39 @@ app.listen(PORT, function () { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 _a.trys.push([1, 3, , 4]);
                 console.log('🔐 Attempting Discord login...');
+                // Presence system reaction handlers
+                client.on('messageReactionAdd', function (reaction, user) { return __awaiter(void 0, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                // Skip partial reactions and users
+                                if (reaction.partial || !user || user.bot)
+                                    return [2 /*return*/];
+                                if (!('username' in user)) return [3 /*break*/, 2];
+                                return [4 /*yield*/, (0, presences_1.handleReactionAdd)(reaction, user, client)];
+                            case 1:
+                                _a.sent();
+                                _a.label = 2;
+                            case 2: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                client.on('messageReactionRemove', function (reaction, user) { return __awaiter(void 0, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                // Skip partial reactions and users
+                                if (reaction.partial || !user || user.bot)
+                                    return [2 /*return*/];
+                                if (!('username' in user)) return [3 /*break*/, 2];
+                                return [4 /*yield*/, (0, presences_1.handleReactionRemove)(reaction, user, client)];
+                            case 1:
+                                _a.sent();
+                                _a.label = 2;
+                            case 2: return [2 /*return*/];
+                        }
+                    });
+                }); });
                 return [4 /*yield*/, client.login(process.env.DISCORD_TOKEN)];
             case 2:
                 _a.sent();

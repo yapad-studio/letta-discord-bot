@@ -1,11 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
-import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction } from 'discord.js';
+import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials } from 'discord.js';
 import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
 
-
-// Presence system imports
-import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
 console.log('🚀 Starting Discord bot...');
 console.log('📋 Environment check:');
 console.log('  - DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? '✓ Set' : '✗ Missing');
@@ -73,9 +70,6 @@ client.on('error', (error) => {
 // Discord Bot Ready Event
 client.once('ready', async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}!`);
-  
-  // Initialize presence system
-  initializePresenceSystem(client);
   if (MESSAGE_BATCH_ENABLED) {
     console.log(`📦 Message batching enabled: ${MESSAGE_BATCH_SIZE} messages or ${MESSAGE_BATCH_TIMEOUT_MS}ms timeout`);
   }
@@ -480,24 +474,7 @@ app.listen(PORT, async () => {
   
   try {
     console.log('🔐 Attempting Discord login...');
-    
-// Presence system reaction handlers
-client.on('messageReactionAdd', async (reaction, user) => {
-  // Skip partial reactions and users
-  if (reaction.partial || !user || user.bot) return;
-  if ('username' in user && 'message' in reaction) {
-    await handleReactionAdd(reaction as MessageReaction, user as User, client);
-  }
-});
-
-client.on('messageReactionRemove', async (reaction, user) => {
-  // Skip partial reactions and users
-  if (reaction.partial || !user || user.bot) return;
-  if ('username' in user && 'message' in reaction) {
-    await handleReactionRemove(reaction as MessageReaction, user as User, client);
-  }
-});
-await client.login(process.env.DISCORD_TOKEN);
+    await client.login(process.env.DISCORD_TOKEN);
     console.log('✅ Discord login successful');
     startRandomEventTimer();
   } catch (error) {
