@@ -4,3 +4,4 @@ dist/
 .letta/
 src/**/*.js
 dist/
+.DS_Store
