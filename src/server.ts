@@ -1,11 +1,28 @@
 import 'dotenv/config';
 import express from 'express';
 import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction, MessageFlags } from 'discord.js';
+
+// Helper function to update presence file
+async function updatePresenceFile(entries: any[]): Promise<void> {
+  const { setPresence } = await import('./services/presences');
+  
+  for (const entry of entries) {
+    setPresence(
+      entry.userId,
+      entry.username,
+      entry.status,
+      entry.date,
+      entry.startTime,
+      entry.endTime
+    );
+  }
+}
 import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
 
 
 // Presence system imports
 import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
+import { CommandInterpreter } from './services/command-interpreter';
 import { setPresence, removePresence, getPresenceForUser } from './services/presences';
 
 console.log('🚀 Starting Discord bot...');
@@ -511,35 +528,83 @@ app.listen(PORT, async () => {
       const commandName = interaction.commandName;
       const user = interaction.user;
 
-      console.log('🤖 Slash command: /' + commandName + ' from ' + user.username);
+      console.log(`🤖 Slash command: /${commandName} from ${user.username}`);
 
       try {
         if (commandName === 'bureau') {
-          console.log('🤖 Command /bureau from', user.username);
+          console.log('🤖 Command /bureau from', user.username, 'params:', interaction.options);
+          
           try {
-            setPresence(user.id, user.username, 'present');
-            await interaction.reply({ content: '✅ Présence enregistrée pour demain', flags: 64 });
+            const commandInterpreter = new CommandInterpreter();
+            const result = await commandInterpreter.interpretCommand(
+              'bureau',
+              interaction.options.map(opt => opt.value),
+              { id: user.id, username: user.username }
+            );
+            
+            // Mettre à jour le fichier JSON avec les entrées
+            await updatePresenceFile(result.entries);
+            
+            await interaction.reply({ 
+              content: `✅ Présence enregistrée pour ${result.entries.length} jour(s)`, 
+              flags: MessageFlags.Ephemeral 
+            });
           } catch (error) {
-            console.error('❌ Error recording presence:', error);
-            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: MessageFlags.Ephemeral });
+            console.error('❌ Error interpreting command:', error);
+            await interaction.reply({ 
+              content: '❌ Erreur lors de l\'interprétation de la commande', 
+              flags: MessageFlags.Ephemeral 
+            });
           }
         } else if (commandName === 'absent') {
-          console.log('🤖 Command /absent from', user.username);
+          console.log('🤖 Command /absent from', user.username, 'params:', interaction.options);
+          
           try {
-            setPresence(user.id, user.username, 'absent');
-            await interaction.reply({ content: '❌ Absence enregistrée pour demain', flags: MessageFlags.Ephemeral });
+            const commandInterpreter = new CommandInterpreter();
+            const result = await commandInterpreter.interpretCommand(
+              'absent',
+              interaction.options.map(opt => opt.value),
+              { id: user.id, username: user.username }
+            );
+            
+            // Mettre à jour le fichier JSON avec les entrées
+            await updatePresenceFile(result.entries);
+            
+            await interaction.reply({ 
+              content: `✅ Absence enregistrée pour ${result.entries.length} jour(s)`, 
+              flags: MessageFlags.Ephemeral 
+            });
           } catch (error) {
-            console.error('❌ Error recording absence:', error);
-            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: MessageFlags.Ephemeral });
+            console.error('❌ Error interpreting command:', error);
+            await interaction.reply({ 
+              content: '❌ Erreur lors de l\'interprétation de la commande', 
+              flags: MessageFlags.Ephemeral 
+            });
           }
         } else if (commandName === 'teletravail') {
-          console.log('🤖 Command /teletravail from', user.username);
+          console.log('🤖 Command /teletravail from', user.username, 'params:', interaction.options);
+          
           try {
-            setPresence(user.id, user.username, 'teletravail');
-            await interaction.reply({ content: '🏠 Télétravail enregistré pour demain', flags: MessageFlags.Ephemeral });
+            const commandInterpreter = new CommandInterpreter();
+            const result = await commandInterpreter.interpretCommand(
+              'teletravail',
+              interaction.options.map(opt => opt.value),
+              { id: user.id, username: user.username }
+            );
+            
+            // Mettre à jour le fichier JSON avec les entrées
+            await updatePresenceFile(result.entries);
+            
+            await interaction.reply({ 
+              content: `✅ Télétravail enregistré pour ${result.entries.length} jour(s)`, 
+              flags: MessageFlags.Ephemeral 
+            });
           } catch (error) {
-            console.error('❌ Error recording telework:', error);
-            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: [MessageFlags.Ephemeral] });
+            console.error('❌ Error interpreting command:', error);
+            await interaction.reply({ 
+              content: '❌ Erreur lors de l\'interprétation de la commande', 
+              flags: MessageFlags.Ephemeral 
+            });
           }
         } else if (commandName === 'qui-est-la') {
           const { generatePresenceRecap } = await import('./services/presences');

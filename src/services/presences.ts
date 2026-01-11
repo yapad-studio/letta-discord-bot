@@ -6,7 +6,10 @@ interface PresenceRecord {
   userId: string;
   username: string;
   status: 'present' | 'absent' | 'teletravail';
-  timestamp: string;
+  timestamp: string;        // ISO UTC
+  startTime?: string;       // HH:mm format
+  endTime?: string;         // HH:mm format
+  timezone?: string;        // 'America/Guadeloupe'
 }
 
 interface DailyPresences {
@@ -95,7 +98,14 @@ export function getPresences(date: string = getTodayDate()): PresenceRecord[] {
 }
 
 // Set presence for a user
-export function setPresence(userId: string, username: string, status: 'present' | 'absent' | 'teletravail', date?: string): void {
+export function setPresence(
+  userId: string, 
+  username: string, 
+  status: 'present' | 'absent' | 'teletravail',
+  date?: string,
+  startTime?: string,
+  endTime?: string
+): void {
   const data = loadPresences();
   const targetDate = date || getTodayDate();
 
@@ -107,7 +117,10 @@ export function setPresence(userId: string, username: string, status: 'present' 
     userId,
     username,
     status,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(), // Toujours en UTC
+    startTime,
+    endTime,
+    timezone: 'America/Guadeloupe'
   };
 
   savePresences(data);
@@ -161,17 +174,13 @@ export function isValidPresenceEmoji(emoji: string): boolean {
 
 // Get Guadeloupe time from ISO string
 function getGuadeloupeTime(isoString: string): string {
-  const GUADALOUPE_OFFSET = -4; // GMT-4
   const date = new Date(isoString);
   
-  // Convertir en heure Guadeloupe
-  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
-  
-  return guadeloupeTime.toLocaleTimeString('fr-FR', { 
+  return date.toLocaleTimeString('fr-FR', { 
     hour: '2-digit', 
     minute: '2-digit',
-    hour12: false
+    hour12: false,
+    timeZone: 'America/Guadeloupe'
   });
 }
 
