@@ -6,6 +6,7 @@ import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBl
 
 // Presence system imports
 import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
+import { setPresence, removePresence, getPresenceForUser } from './services/presences';
 console.log('🚀 Starting Discord bot...');
 console.log('📋 Environment check:');
 console.log('  - DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? '✓ Set' : '✗ Missing');
@@ -483,6 +484,7 @@ app.listen(PORT, async () => {
     
 // Presence system reaction handlers
 client.on('messageReactionAdd', async (reaction, user) => {
+  console.log('🔄 Reaction ADD:', reaction.emoji.name, 'by', user.username);
   // Skip partial reactions and users
   if (reaction.partial || !user || user.bot) return;
   if ('username' in user && 'message' in reaction) {
@@ -491,6 +493,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
+  console.log('🔄 Reaction REMOVE:', reaction.emoji.name, 'by', user.username);
   // Skip partial reactions and users
   if (reaction.partial || !user || user.bot) return;
   if ('username' in user && 'message' in reaction) {
