@@ -7,6 +7,7 @@ import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBl
 // Presence system imports
 import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
 import { setPresence, removePresence, getPresenceForUser } from './services/presences';
+
 console.log('🚀 Starting Discord bot...');
 console.log('📋 Environment check:');
 console.log('  - DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? '✓ Set' : '✗ Missing');
@@ -503,23 +504,43 @@ app.listen(PORT, async () => {
     });
 
 
-
     // Handle slash commands
     client.on('interactionCreate', async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
 
       const commandName = interaction.commandName;
-      const username = interaction.user.username;
+      const user = interaction.user;
 
-      console.log('🤖 Slash command: /' + commandName + ' from ' + username);
+      console.log('🤖 Slash command: /' + commandName + ' from ' + user.username);
 
       try {
         if (commandName === 'bureau') {
-          await interaction.reply({ content: '✅ Presence enregistree', ephemeral: true });
+          console.log('🤖 Command /bureau from', user.username);
+          try {
+            setPresence(user.id, user.username, 'present');
+            await interaction.reply({ content: '✅ Présence enregistrée pour demain', ephemeral: true });
+          } catch (error) {
+            console.error('❌ Error recording presence:', error);
+            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', ephemeral: true });
+          }
         } else if (commandName === 'absent') {
-          await interaction.reply({ content: '❌ Absence enregistree', ephemeral: true });
+          console.log('🤖 Command /absent from', user.username);
+          try {
+            setPresence(user.id, user.username, 'absent');
+            await interaction.reply({ content: '❌ Absence enregistrée pour demain', ephemeral: true });
+          } catch (error) {
+            console.error('❌ Error recording absence:', error);
+            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', ephemeral: true });
+          }
         } else if (commandName === 'teletravail') {
-          await interaction.reply({ content: '🏠 Teletravail enregistre', ephemeral: true });
+          console.log('🤖 Command /teletravail from', user.username);
+          try {
+            setPresence(user.id, user.username, 'teletravail');
+            await interaction.reply({ content: '🏠 Télétravail enregistré pour demain', ephemeral: true });
+          } catch (error) {
+            console.error('❌ Error recording telework:', error);
+            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', ephemeral: true });
+          }
         } else if (commandName === 'qui-est-la') {
           const { generatePresenceSummary } = await import('./services/presences');
           const summary = generatePresenceSummary();
