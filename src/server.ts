@@ -40,10 +40,10 @@ console.log('  - REPLY_IN_THREADS:', REPLY_IN_THREADS);
 console.log('  - MESSAGE_BATCH_ENABLED:', MESSAGE_BATCH_ENABLED);
 
 function truncateMessage(message: string, maxLength: number): string {
-    if (message.length > maxLength) {
-        return message.substring(0, maxLength - 3) + '...'; // Truncate and add ellipsis
-    }
-    return message;
+  if (message.length > maxLength) {
+    return message.substring(0, maxLength - 3) + '...'; // Truncate and add ellipsis
+  }
+  return message;
 }
 
 console.log('🔧 Creating Discord client...');
@@ -53,6 +53,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages, // Needed to read messages in servers
     GatewayIntentBits.MessageContent, // Required to read message content
     GatewayIntentBits.DirectMessages, // Needed to receive DMs
+    GatewayIntentBits.GuildMessageReactions, // Needed to react to messages
   ],
   partials: [Partials.Channel] // Required for handling DMs
 });
@@ -74,16 +75,16 @@ client.on('error', (error) => {
 // Discord Bot Ready Event
 client.once('ready', async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}!`);
-  
+
   // Initialize presence system
   initializePresenceSystem(client);
   if (MESSAGE_BATCH_ENABLED) {
     console.log(`📦 Message batching enabled: ${MESSAGE_BATCH_SIZE} messages or ${MESSAGE_BATCH_TIMEOUT_MS}ms timeout`);
   }
-  
+
   // Clean up any accumulated user blocks from previous sessions
   await cleanupUserBlocks();
-  
+
   // Start periodic cleanup timer for user blocks
   if (USER_BLOCKS_CLEANUP_INTERVAL_MINUTES > 0) {
     const intervalMs = USER_BLOCKS_CLEANUP_INTERVAL_MINUTES * 60 * 1000;
@@ -213,12 +214,12 @@ function shouldRespondInChannel(message: OmitPartialGroupDMChannel<Message<boole
   if (!RESPONSE_CHANNEL_ID) {
     return true;
   }
-  
+
   // For threads, check the parent channel ID
-  const channelId = message.channel.isThread() 
-    ? message.channel.parentId 
+  const channelId = message.channel.isThread()
+    ? message.channel.parentId
     : message.channel.id;
-    
+
   // If RESPONSE_CHANNEL_ID is set, only respond in that channel
   return channelId === RESPONSE_CHANNEL_ID;
 }
@@ -226,10 +227,10 @@ function shouldRespondInChannel(message: OmitPartialGroupDMChannel<Message<boole
 // Helper function to send a message, splitting if necessary
 async function sendSplitReply(message: OmitPartialGroupDMChannel<Message<boolean>>, content: string) {
   const chunks = splitMessage(content);
-  
+
   if (REPLY_IN_THREADS && message.guild !== null) {
     let thread;
-    
+
     if (message.channel.isThread()) {
       thread = message.channel;
     } else if (message.hasThread && message.thread) {
@@ -238,7 +239,7 @@ async function sendSplitReply(message: OmitPartialGroupDMChannel<Message<boolean
       const threadName = message.content.substring(0, 50) || 'Chat';
       thread = await message.startThread({ name: threadName });
     }
-    
+
     if (thread) {
       for (const chunk of chunks) {
         await thread.send(chunk);
@@ -290,64 +291,64 @@ async function processAndSendMessage(message: OmitPartialGroupDMChannel<Message<
 // Function to start a randomized event timer with improved timing
 async function startRandomEventTimer() {
   if (!ENABLE_TIMER) {
-      console.log("Timer feature is disabled.");
-      return;
+    console.log("Timer feature is disabled.");
+    return;
   }
 
   // Set a minimum delay to prevent too-frequent firing (at least 1 minute)
   const minMinutes = 1;
   // Generate random minutes between minMinutes and TIMER_INTERVAL_MINUTES
   const randomMinutes = minMinutes + Math.floor(Math.random() * (TIMER_INTERVAL_MINUTES - minMinutes));
-  
+
   // Log the next timer interval for debugging
   console.log(`⏰ Timer scheduled to fire in ${randomMinutes} minutes`);
-  
+
   const delay = randomMinutes * 60 * 1000; // Convert minutes to milliseconds
 
   setTimeout(async () => {
-      console.log(`⏰ Timer fired after ${randomMinutes} minutes`);
-      
-      // Determine if the event should fire based on the probability
-      if (Math.random() < FIRING_PROBABILITY) {
-          console.log(`⏰ Random event triggered (${FIRING_PROBABILITY * 100}% chance)`);
+    console.log(`⏰ Timer fired after ${randomMinutes} minutes`);
 
-          // Get the channel if available
-          let channel: { send: (content: string) => Promise<any> } | undefined = undefined;
-          if (CHANNEL_ID) {
-              try {
-                  const fetchedChannel = await client.channels.fetch(CHANNEL_ID);
-                  if (fetchedChannel && 'send' in fetchedChannel) {
-                      channel = fetchedChannel as any;
-                  } else {
-                      console.log("⏰ Channel not found or is not a text channel.");
-                  }
-              } catch (error) {
-                  console.error("⏰ Error fetching channel:", error);
-              }
+    // Determine if the event should fire based on the probability
+    if (Math.random() < FIRING_PROBABILITY) {
+      console.log(`⏰ Random event triggered (${FIRING_PROBABILITY * 100}% chance)`);
+
+      // Get the channel if available
+      let channel: { send: (content: string) => Promise<any> } | undefined = undefined;
+      if (CHANNEL_ID) {
+        try {
+          const fetchedChannel = await client.channels.fetch(CHANNEL_ID);
+          if (fetchedChannel && 'send' in fetchedChannel) {
+            channel = fetchedChannel as any;
+          } else {
+            console.log("⏰ Channel not found or is not a text channel.");
           }
-
-          // Generate the response via the API, passing the channel for async messages
-          const msg = await sendTimerMessage(channel);
-
-          // Send the final assistant message if there is one
-          if (msg !== "" && channel) {
-              try {
-                  await sendSplitMessage(channel, msg);
-                  console.log(`⏰ Timer message sent to channel (${msg.length} chars)`);
-              } catch (error) {
-                  console.error("⏰ Error sending timer message:", error);
-              }
-          } else if (!channel) {
-              console.log("⏰ No CHANNEL_ID defined or channel not available; message not sent.");
-          }
-      } else {
-          console.log(`⏰ Random event not triggered (${(1 - FIRING_PROBABILITY) * 100}% chance)`);
+        } catch (error) {
+          console.error("⏰ Error fetching channel:", error);
+        }
       }
-      
-      // Schedule the next timer with a small delay to prevent immediate restarts
-      setTimeout(() => {
-          startRandomEventTimer(); 
-      }, 1000); // 1 second delay before scheduling next timer
+
+      // Generate the response via the API, passing the channel for async messages
+      const msg = await sendTimerMessage(channel);
+
+      // Send the final assistant message if there is one
+      if (msg !== "" && channel) {
+        try {
+          await sendSplitMessage(channel, msg);
+          console.log(`⏰ Timer message sent to channel (${msg.length} chars)`);
+        } catch (error) {
+          console.error("⏰ Error sending timer message:", error);
+        }
+      } else if (!channel) {
+        console.log("⏰ No CHANNEL_ID defined or channel not available; message not sent.");
+      }
+    } else {
+      console.log(`⏰ Random event not triggered (${(1 - FIRING_PROBABILITY) * 100}% chance)`);
+    }
+
+    // Schedule the next timer with a small delay to prevent immediate restarts
+    setTimeout(() => {
+      startRandomEventTimer();
+    }, 1000); // 1 second delay before scheduling next timer
   }, delay);
 }
 
@@ -397,7 +398,7 @@ client.on('messageCreate', async (message) => {
   // Check if the bot is mentioned or if the message is a reply to the bot
   const isMention = message.mentions.has(client.user || '');
   let isReplyToBot = false;
-  
+
   // If it's a reply, check if it's to the bot
   if (message.reference && message.reference.messageId) {
     try {
@@ -407,7 +408,7 @@ client.on('messageCreate', async (message) => {
       console.log(`⚠️ Could not fetch referenced message: ${error instanceof Error ? error.message : error}`);
     }
   }
-  
+
   if (RESPOND_TO_MENTIONS && (isMention || isReplyToBot)) {
     console.log(`📩 Received message from ${message.author.username}: ${message.content}`);
 
@@ -473,69 +474,69 @@ client.on('messageCreate', async (message) => {
 console.log(`🌐 Starting Express server on port ${PORT}...`);
 app.listen(PORT, async () => {
   console.log(`✅ Express server listening on port ${PORT}`);
-  
+
   if (!process.env.DISCORD_TOKEN) {
     console.error('❌ DISCORD_TOKEN not set! Cannot login to Discord.');
     process.exit(1);
   }
-  
+
   try {
     console.log('🔐 Attempting Discord login...');
-    
-// Presence system reaction handlers
-client.on('messageReactionAdd', async (reaction, user) => {
-  console.log('🔄 Reaction ADD:', reaction.emoji.name, 'by', user.username);
-  // Skip partial reactions and users
-  if (reaction.partial || !user || user.bot) return;
-  if ('username' in user && 'message' in reaction) {
-    await handleReactionAdd(reaction as MessageReaction, user as User, client);
-  }
-});
 
-client.on('messageReactionRemove', async (reaction, user) => {
-  console.log('🔄 Reaction REMOVE:', reaction.emoji.name, 'by', user.username);
-  // Skip partial reactions and users
-  if (reaction.partial || !user || user.bot) return;
-  if ('username' in user && 'message' in reaction) {
-    await handleReactionRemove(reaction as MessageReaction, user as User, client);
-  }
-});
+    // Presence system reaction handlers
+    client.on('messageReactionAdd', async (reaction, user) => {
+      console.log('🔄 Reaction ADD:', reaction.emoji.name, 'by', user.username);
+      // Skip partial reactions and users
+      if (reaction.partial || !user || user.bot) return;
+      if ('username' in user && 'message' in reaction) {
+        await handleReactionAdd(reaction as MessageReaction, user as User, client);
+      }
+    });
+
+    client.on('messageReactionRemove', async (reaction, user) => {
+      console.log('🔄 Reaction REMOVE:', reaction.emoji.name, 'by', user.username);
+      // Skip partial reactions and users
+      if (reaction.partial || !user || user.bot) return;
+      if ('username' in user && 'message' in reaction) {
+        await handleReactionRemove(reaction as MessageReaction, user as User, client);
+      }
+    });
 
 
 
-// Handle slash commands
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-  
-  const commandName = interaction.commandName;
-  const username = interaction.user.username;
-  
-  console.log('🤖 Slash command: /' + commandName + ' from ' + username);
-  
-  try {
-    if (commandName === 'bureau') {
-      await interaction.reply({ content: '✅ Presence enregistree', ephemeral: true });
-    } else if (commandName === 'absent') {
-      await interaction.reply({ content: '❌ Absence enregistree', ephemeral: true });
-    } else if (commandName === 'teletravail') {
-      await interaction.reply({ content: '🏠 Teletravail enregistre', ephemeral: true });
-    } else if (commandName === 'qui-est-la') {
-      const { generatePresenceSummary } = await import('./services/presences');
-      const summary = generatePresenceSummary();
-      await interaction.reply({ content: summary, ephemeral: false });
-    } else if (commandName === 'help-presences') {
-      const msg = 'Commandes: /bureau, /absent, /teletravail, /qui-est-la, /help-presences';
-      await interaction.reply({ content: msg, ephemeral: true });
-    } else {
-      await interaction.reply({ content: 'Commande inconnue', ephemeral: true });
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    await interaction.reply({ content: 'Erreur', ephemeral: true });
-  }
-});
+    // Handle slash commands
+    client.on('interactionCreate', async (interaction) => {
+      if (!interaction.isChatInputCommand()) return;
 
-await client.login(process.env.DISCORD_TOKEN);
+      const commandName = interaction.commandName;
+      const username = interaction.user.username;
+
+      console.log('🤖 Slash command: /' + commandName + ' from ' + username);
+
+      try {
+        if (commandName === 'bureau') {
+          await interaction.reply({ content: '✅ Presence enregistree', ephemeral: true });
+        } else if (commandName === 'absent') {
+          await interaction.reply({ content: '❌ Absence enregistree', ephemeral: true });
+        } else if (commandName === 'teletravail') {
+          await interaction.reply({ content: '🏠 Teletravail enregistre', ephemeral: true });
+        } else if (commandName === 'qui-est-la') {
+          const { generatePresenceSummary } = await import('./services/presences');
+          const summary = generatePresenceSummary();
+          await interaction.reply({ content: summary, ephemeral: false });
+        } else if (commandName === 'help-presences') {
+          const msg = 'Commandes: /bureau, /absent, /teletravail, /qui-est-la, /help-presences';
+          await interaction.reply({ content: msg, ephemeral: true });
+        } else {
+          await interaction.reply({ content: 'Commande inconnue', ephemeral: true });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        await interaction.reply({ content: 'Erreur', ephemeral: true });
+      }
+    });
+
+    await client.login(process.env.DISCORD_TOKEN);
     console.log('✅ Discord login successful');
     startRandomEventTimer();
   } catch (error) {
