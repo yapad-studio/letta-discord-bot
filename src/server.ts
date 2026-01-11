@@ -518,42 +518,42 @@ app.listen(PORT, async () => {
           console.log('🤖 Command /bureau from', user.username);
           try {
             setPresence(user.id, user.username, 'present');
-            await interaction.reply({ content: '✅ Présence enregistrée pour demain', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '✅ Présence enregistrée pour demain', flags: 64 });
           } catch (error) {
             console.error('❌ Error recording presence:', error);
-            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: MessageFlags.Ephemeral });
           }
         } else if (commandName === 'absent') {
           console.log('🤖 Command /absent from', user.username);
           try {
             setPresence(user.id, user.username, 'absent');
-            await interaction.reply({ content: '❌ Absence enregistrée pour demain', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '❌ Absence enregistrée pour demain', flags: MessageFlags.Ephemeral });
           } catch (error) {
             console.error('❌ Error recording absence:', error);
-            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: MessageFlags.Ephemeral });
           }
         } else if (commandName === 'teletravail') {
           console.log('🤖 Command /teletravail from', user.username);
           try {
             setPresence(user.id, user.username, 'teletravail');
-            await interaction.reply({ content: '🏠 Télétravail enregistré pour demain', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '🏠 Télétravail enregistré pour demain', flags: MessageFlags.Ephemeral });
           } catch (error) {
             console.error('❌ Error recording telework:', error);
             await interaction.reply({ content: '❌ Erreur lors de l\'enregistrement', flags: [MessageFlags.Ephemeral] });
           }
         } else if (commandName === 'qui-est-la') {
-          const { generatePresenceSummary } = await import('./services/presences');
-          const summary = generatePresenceSummary();
-          await interaction.reply({ content: summary, ephemeral: false });
+          const { generatePresenceRecap } = await import('./services/presences');
+          const summary = generatePresenceRecap();
+          await interaction.reply({ content: summary, flags: MessageFlags.Ephemeral });
         } else if (commandName === 'help-presences') {
           const msg = 'Commandes: /bureau, /absent, /teletravail, /qui-est-la, /help-presences';
-          await interaction.reply({ content: msg, flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
         } else {
-          await interaction.reply({ content: 'Commande inconnue', flags: [MessageFlags.Ephemeral] });
+          await interaction.reply({ content: 'Commande inconnue', flags: MessageFlags.Ephemeral });
         }
       } catch (error) {
         console.error('Error:', error);
-        await interaction.reply({ content: 'Erreur', flags: [MessageFlags.Ephemeral] });
+        await interaction.reply({ content: 'Erreur', flags: MessageFlags.Ephemeral });
       }
     });
 

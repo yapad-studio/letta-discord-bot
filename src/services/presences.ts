@@ -160,6 +160,59 @@ export function isValidPresenceEmoji(emoji: string): boolean {
 }
 
 // Generate presence summary message
+export function generatePresenceRecap(date: string = getTodayDate()): string {
+  const presences = getPresences(date);
+  
+  const present = presences.filter(p => p.status === 'present');
+  const absent = presences.filter(p => p.status === 'absent');
+  const teletravail = presences.filter(p => p.status === 'teletravail');
+  
+  const today = new Date(date);
+  const dateStr = today.toLocaleDateString('fr-FR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  let message = `📍 **Récap Présences - ${dateStr}**\n\n`;
+  
+  if (present.length > 0) {
+    message += `**Présents (${present.length}) :**\n`;
+    present.forEach(p => {
+      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      message += `• ${p.username} (${time})\n`;
+    });
+    message += `\n`;
+  }
+  
+  if (teletravail.length > 0) {
+    message += `**Télétravail (${teletravail.length}) :**\n`;
+    teletravail.forEach(p => {
+      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      message += `• ${p.username} (${time})\n`;
+    });
+    message += `\n`;
+  }
+  
+  if (absent.length > 0) {
+    message += `**Absents (${absent.length}) :**\n`;
+    absent.forEach(p => {
+      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      message += `• ${p.username} (${time})\n`;
+    });
+    message += `\n`;
+  }
+  
+  // Add total counts
+  message += `**📊 Total :** ${presences.length} personnes\n`;
+  message += `• Présents : ${present.length}\n`;
+  message += `• Absents : ${absent.length}\n`;
+  message += `• Télétravail : ${teletravail.length}\n`;
+  
+  return message;
+}
+
 export function generatePresenceSummary(date: string = getTomorrowDate()): string {
   const presences = getPresences(date);
 
