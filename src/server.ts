@@ -497,6 +497,41 @@ client.on('messageReactionRemove', async (reaction, user) => {
     await handleReactionRemove(reaction as MessageReaction, user as User, client);
   }
 });
+
+
+
+// Handle slash commands
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+  
+  const commandName = interaction.commandName;
+  const username = interaction.user.username;
+  
+  console.log('🤖 Slash command: /' + commandName + ' from ' + username);
+  
+  try {
+    if (commandName === 'bureau') {
+      await interaction.reply({ content: '✅ Presence enregistree', ephemeral: true });
+    } else if (commandName === 'absent') {
+      await interaction.reply({ content: '❌ Absence enregistree', ephemeral: true });
+    } else if (commandName === 'teletravail') {
+      await interaction.reply({ content: '🏠 Teletravail enregistre', ephemeral: true });
+    } else if (commandName === 'qui-est-la') {
+      const { generatePresenceSummary } = await import('./services/presences');
+      const summary = generatePresenceSummary();
+      await interaction.reply({ content: summary, ephemeral: false });
+    } else if (commandName === 'help-presences') {
+      const msg = 'Commandes: /bureau, /absent, /teletravail, /qui-est-la, /help-presences';
+      await interaction.reply({ content: msg, ephemeral: true });
+    } else {
+      await interaction.reply({ content: 'Commande inconnue', ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    await interaction.reply({ content: 'Erreur', ephemeral: true });
+  }
+});
+
 await client.login(process.env.DISCORD_TOKEN);
     console.log('✅ Discord login successful');
     startRandomEventTimer();

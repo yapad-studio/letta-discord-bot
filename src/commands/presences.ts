@@ -1,4 +1,30 @@
 
+// Timezone constants
+const GUADALOUPE_OFFSET = -4; // GMT-4
+
+// Get current time in Guadeloupe timezone
+function getGuadeloupeTime(): Date {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
+  return guadeloupeTime;
+}
+
+// Get tomorrow's date considering Guadeloupe timezone
+function getTomorrowDate(): string {
+  const guadeloupeTime = getGuadeloupeTime();
+  const tomorrow = new Date(guadeloupeTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+}
+
+// Get today's date considering Guadeloupe timezone
+function getTodayDate(): string {
+  const guadeloupeTime = getGuadeloupeTime();
+  return guadeloupeTime.toISOString().split('T')[0];
+}
+
+
 // Type guard to ensure oldEmoji is a string
 function isValidEmoji(emoji: string | undefined): emoji is string {
   return emoji !== undefined;
@@ -19,7 +45,7 @@ import {
 
 // Constants
 const PRESENCE_CHANNEL_ID = process.env.PRESENCE_CHANNEL_ID || '123456789'; // TODO: Set your channel ID
-const DAILY_MESSAGE_TIME = { hour: 18, minute: 45 }; // 17h30
+const DAILY_MESSAGE_TIME = { hour: 23, minute: 45 }; // 17h30
 
 // React to a message with presence emojis
 async function addPresenceReactions(message: Message): Promise<void> {
@@ -142,7 +168,7 @@ export async function postDailyMessage(client: Client): Promise<void> {
     }
 
     // Post new message
-    const summary = generatePresenceSummary();
+    const summary = generatePresenceSummary(getTomorrowDate());
     const message = await channel.send(summary);
     
     // Add reactions
@@ -168,7 +194,7 @@ async function updateDailyMessage(client: Client): Promise<void> {
     );
 
     if (dailyMessage) {
-      const summary = generatePresenceSummary();
+      const summary = generatePresenceSummary(getTomorrowDate());
       await dailyMessage.edit(summary);
       console.log('📅 Daily message updated');
     }
