@@ -95,15 +95,15 @@ export function getPresences(date: string = getTodayDate()): PresenceRecord[] {
 }
 
 // Set presence for a user
-export function setPresence(userId: string, username: string, status: 'present' | 'absent' | 'teletravail'): void {
+export function setPresence(userId: string, username: string, status: 'present' | 'absent' | 'teletravail', date?: string): void {
   const data = loadPresences();
-  const today = getTodayDate();
+  const targetDate = date || getTodayDate();
 
-  if (!data[today]) {
-    data[today] = {};
+  if (!data[targetDate]) {
+    data[targetDate] = {};
   }
 
-  data[today][userId] = {
+  data[targetDate][userId] = {
     userId,
     username,
     status,

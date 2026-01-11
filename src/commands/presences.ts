@@ -12,6 +12,41 @@ import {
   getEmojiForStatus
 } from '../services/presences';
 
+// Helper functions for date handling
+function getMessageDate(message: Message): string {
+  // Extraire la date du message Discord
+  // Le message a un format comme "📍 **Présences Bureau - Lundi 12 janvier 2025**"
+  
+  const content = message.content;
+  const dateMatch = content.match(/📍 \*\*Présences Bureau - (.+)\*\*/);
+  
+  if (dateMatch && dateMatch[1]) {
+    const dateStr = dateMatch[1];
+    // Convertir la date string en format YYYY-MM-DD
+    return convertDateToISO(dateStr);
+  }
+  
+  // Si on ne trouve pas la date, utiliser demain par défaut
+  return getTomorrowDate();
+}
+
+function convertDateToISO(dateStr: string): string {
+  // Convertir "Lundi 12 janvier 2025" en "2025-01-12"
+  // Cette fonction gère la conversion du format français
+  const months: Record<string, number> = {
+    'janvier': 1, 'février': 2, 'mars': 3, 'avril': 4,
+    'mai': 5, 'juin': 6, 'juillet': 7, 'août': 8,
+    'septembre': 9, 'octobre': 10, 'novembre': 11, 'décembre': 12
+  };
+  
+  const parts = dateStr.split(' ');
+  const day = parseInt(parts[1]);
+  const month = months[parts[2].toLowerCase()];
+  const year = parseInt(parts[3]);
+  
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
 // Constants
 const PRESENCE_CHANNEL_ID = process.env.PRESENCE_CHANNEL_ID || '123456789'; // TODO: Set your channel ID
 const DAILY_MESSAGE_TIME = { hour: 23, minute: 45 }; // 17h30
@@ -98,12 +133,16 @@ export async function handleReactionAdd(
     }
 
     // Set new presence
-    setPresence(user.id, user.username, status);
+    // Récupérer la date du message (le message quotidien)
+    const messageDate = getMessageDate(reaction.message as Message<boolean>);
+    
+    // Enregistrer la présence pour la date du message (demain)
+    setPresence(user.id, user.username, status, messageDate);
 
     // Update the daily message with current stats
     await updateDailyMessage(client);
 
-    console.log(`✅ ${user.username} marked as ${status}`);
+    console.log(`✅ ${user.username} marked as ${status} for ${messageDate}`);
   } catch (error) {
     console.error('❌ Error handling reaction add:', error);
   }
