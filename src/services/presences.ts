@@ -159,6 +159,22 @@ export function isValidPresenceEmoji(emoji: string): boolean {
   return Object.keys(EMOJI_STATUS_MAP).includes(emoji);
 }
 
+// Get Guadeloupe time from ISO string
+function getGuadeloupeTime(isoString: string): string {
+  const GUADALOUPE_OFFSET = -4; // GMT-4
+  const date = new Date(isoString);
+  
+  // Convertir en heure Guadeloupe
+  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
+  
+  return guadeloupeTime.toLocaleTimeString('fr-FR', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
 // Generate presence summary message
 export function generatePresenceRecap(date: string = getTodayDate()): string {
   const presences = getPresences(date);
@@ -180,7 +196,7 @@ export function generatePresenceRecap(date: string = getTodayDate()): string {
   if (present.length > 0) {
     message += `**Présents (${present.length}) :**\n`;
     present.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const time = getGuadeloupeTime(p.timestamp);
       message += `• ${p.username} (${time})\n`;
     });
     message += `\n`;
@@ -189,7 +205,7 @@ export function generatePresenceRecap(date: string = getTodayDate()): string {
   if (teletravail.length > 0) {
     message += `**Télétravail (${teletravail.length}) :**\n`;
     teletravail.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const time = getGuadeloupeTime(p.timestamp);
       message += `• ${p.username} (${time})\n`;
     });
     message += `\n`;
@@ -198,7 +214,7 @@ export function generatePresenceRecap(date: string = getTodayDate()): string {
   if (absent.length > 0) {
     message += `**Absents (${absent.length}) :**\n`;
     absent.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const time = getGuadeloupeTime(p.timestamp);
       message += `• ${p.username} (${time})\n`;
     });
     message += `\n`;
