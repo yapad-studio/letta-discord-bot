@@ -21,7 +21,7 @@ interface PresencesData {
 const DATA_FILE = path.join(__dirname, '../../data/presences.json');
 const EMOJI_STATUS_MAP = {
   '✅': 'present',
-  '❌': 'absent', 
+  '❌': 'absent',
   '🏠': 'teletravail'
 } as const;
 
@@ -80,7 +80,7 @@ export function getTomorrowDate(): string {
   const now = new Date();
   const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
   const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
-  
+
   // Get tomorrow in Guadeloupe time
   const tomorrow = new Date(guadeloupeTime);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -98,18 +98,18 @@ export function getPresences(date: string = getTodayDate()): PresenceRecord[] {
 export function setPresence(userId: string, username: string, status: 'present' | 'absent' | 'teletravail'): void {
   const data = loadPresences();
   const today = getTodayDate();
-  
+
   if (!data[today]) {
     data[today] = {};
   }
-  
+
   data[today][userId] = {
     userId,
     username,
     status,
     timestamp: new Date().toISOString()
   };
-  
+
   savePresences(data);
 }
 
@@ -117,7 +117,7 @@ export function setPresence(userId: string, username: string, status: 'present' 
 export function removePresence(userId: string): void {
   const data = loadPresences();
   const today = getTodayDate();
-  
+
   if (data[today] && data[today][userId]) {
     delete data[today][userId];
     savePresences(data);
@@ -162,56 +162,40 @@ export function isValidPresenceEmoji(emoji: string): boolean {
 // Generate presence summary message
 export function generatePresenceSummary(date: string = getTomorrowDate()): string {
   const presences = getPresences(date);
-  
-  const present = presences.filter(p => p.status === 'present');
-  const absent = presences.filter(p => p.status === 'absent');
-  const teletravail = presences.filter(p => p.status === 'teletravail');
-  
+
   const today = new Date(date);
-  const dateStr = today.toLocaleDateString('fr-FR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const dateStr = today.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
-  
+
   let message = `📍 **Présences Bureau - ${dateStr}**\n\n`;
-  
-  if (present.length > 0) {
-    message += `**Présents (${present.length}) :**\n`;
-    present.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
+
+  // Message interactif au lieu de statistiques
+  message += `👋 **C'est l'heure de dire où tu seras demain !**\n\n`;
+  message += `Réagis avec :\n`;
+  message += `• ✅ **Présent au bureau**\n`;
+  message += `• ❌ **Absent**\n`;
+  message += `• 🏠 **Télétravail**\n\n`;
+  message += `Ou utilise les commandes slash :\n`;
+  message += `• /bureau → Présent au bureau\n`;
+  message += `• /absent → Absent\n`;
+  message += `• /teletravail → Télétravail\n\n`;
+
+  // Optionnel : Afficher les réponses actuelles si il y en a
+  if (presences.length > 0) {
+    message += `---\n\n`;
+    message += `**Réponses actuelles :**\n`;
+    message += `• Présents : ${presences.filter(p => p.status === 'present').length}\n`;
+    message += `• Absents : ${presences.filter(p => p.status === 'absent').length}\n`;
+    message += `• Télétravail : ${presences.filter(p => p.status === 'teletravail').length}\n`;
   }
-  
-  if (teletravail.length > 0) {
-    message += `**Télétravail (${teletravail.length}) :**\n`;
-    teletravail.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
-  }
-  
-  if (absent.length > 0) {
-    message += `**Absents (${absent.length}) :**\n`;
-    absent.forEach(p => {
-      const time = new Date(p.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
-  }
-  
-  // Add total counts
-  message += `**📊 Total :** ${presences.length} personnes\n`;
-  message += `• Présents : ${present.length}\n`;
-  message += `• Télétravail : ${teletravail.length}\n`;
-  message += `• Absents : ${absent.length}\n`;
-  
+
   return message;
 }
+
 
 // Initialize data file if it doesn't exist
 export function initializePresences(): void {
