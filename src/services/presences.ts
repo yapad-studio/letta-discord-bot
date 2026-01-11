@@ -45,10 +45,16 @@ function loadPresences(): PresencesData {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = fs.readFileSync(DATA_FILE, 'utf-8');
+      // Handle empty or invalid JSON files
+      if (data.trim() === '') {
+        return {};
+      }
       return JSON.parse(data) as PresencesData;
     }
   } catch (error) {
     console.error('❌ Error loading presences data:', error);
+    // Return empty object for invalid JSON
+    return {};
   }
   return {};
 }
