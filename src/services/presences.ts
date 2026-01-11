@@ -73,6 +73,20 @@ function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+// Get tomorrow's date string in Guadeloupe timezone (GMT-4)
+export function getTomorrowDate(): string {
+  // Get current time in Guadeloupe timezone (GMT-4)
+  const GUADALOUPE_OFFSET = -4; // GMT-4
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
+  
+  // Get tomorrow in Guadeloupe time
+  const tomorrow = new Date(guadeloupeTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+}
+
 // Get presences for a specific date (default: today)
 export function getPresences(date: string = getTodayDate()): PresenceRecord[] {
   const data = loadPresences();
@@ -146,7 +160,7 @@ export function isValidPresenceEmoji(emoji: string): boolean {
 }
 
 // Generate presence summary message
-export function generatePresenceSummary(date: string = getTodayDate()): string {
+export function generatePresenceSummary(date: string = getTomorrowDate()): string {
   const presences = getPresences(date);
   
   const present = presences.filter(p => p.status === 'present');
