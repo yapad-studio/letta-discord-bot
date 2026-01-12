@@ -67,23 +67,39 @@ export async function interpretCommand(
     Utilisateur: ${user.username} (${user.id})
     Date de référence: ${referenceDate.iso} (Guadeloupe: ${referenceDate.local})
     
-    Analyse cette commande et retourne le JSON structuré pour la mise à jour des présences.
+    Analyse cette commande et retourne uniquement le JSON structuré pour la mise à jour des présences.
   `;
 
   const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: COMMAND_SYSTEM_PROMPT, role: "system" }, { content: prompt, role: 'user' }] });
 
   if (response.messages[0].message_type === "assistant_message") {
     const content = response.messages[0].content;
+    
+    // Convertir le contenu en string
+    let textContent = '';
     if (typeof content === 'string') {
-      return JSON.parse(content);
-    }
-    // Si content est un tableau, on essaie de trouver du JSON dedans
-    if (Array.isArray(content)) {
-      const textContent = content
+      textContent = content;
+    } else if (Array.isArray(content)) {
+      textContent = content
         .map(item => typeof item === 'string' ? item : (item as any).text)
         .filter(Boolean)
         .join('');
-      return JSON.parse(textContent);
+    }
+    
+    // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('❌ Erreur: Aucun JSON trouvé dans la réponse de l\'agent');
+      console.error('Contenu reçu:', textContent);
+      throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
+    }
+    
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('❌ Erreur: Le JSON extrait est invalide');
+      console.error('JSON extrait:', jsonMatch[0]);
+      throw new Error(`JSON invalide extrait de la réponse: ${parseError.message}`);
     }
   }
 }
