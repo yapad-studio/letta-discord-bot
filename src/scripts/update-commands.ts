@@ -37,6 +37,14 @@ const commands = [
         required: false
       }
     ]
+  },
+  {
+    name: 'qui-est-la',
+    description: 'Afficher qui est présent aujourd\'hui'
+  },
+  {
+    name: 'help-presences',
+    description: 'Afficher l\'aide des commandes de présence'
   }
 ];
 
