@@ -96,10 +96,11 @@ export async function interpretCommand(
     
     try {
       return JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
+    } catch (parseError: unknown) {
       console.error('❌ Erreur: Le JSON extrait est invalide');
       console.error('JSON extrait:', jsonMatch[0]);
-      throw new Error(`JSON invalide extrait de la réponse: ${parseError.message}`);
+      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+      throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
     }
   }
 }
