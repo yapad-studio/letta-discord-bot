@@ -1,11 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
 import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction, MessageFlags } from 'discord.js';
+import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
+// Presence system imports
+import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
+import { interpretCommand } from './services/command-interpreter';
 
 // Helper function to update presence file
 async function updatePresenceFile(entries: any[]): Promise<void> {
   const { setPresence } = await import('./services/presences');
-  
+
   for (const entry of entries) {
     setPresence(
       entry.userId,
@@ -17,13 +21,6 @@ async function updatePresenceFile(entries: any[]): Promise<void> {
     );
   }
 }
-import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
-
-
-// Presence system imports
-import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
-import { CommandInterpreter } from './services/command-interpreter';
-import { setPresence, removePresence, getPresenceForUser } from './services/presences';
 
 console.log('🚀 Starting Discord bot...');
 console.log('📋 Environment check:');
@@ -533,77 +530,74 @@ app.listen(PORT, async () => {
       try {
         if (commandName === 'bureau') {
           console.log('🤖 Command /bureau from', user.username, 'params:', interaction.options);
-          
+
           try {
-            const commandInterpreter = new CommandInterpreter();
-            const result = await commandInterpreter.interpretCommand(
+            const result = await interpretCommand(
               'bureau',
-              interaction.options.map(opt => opt.value),
+              interaction.options.data.map(opt => opt.value?.toString() || ''),
               { id: user.id, username: user.username }
             );
-            
+
             // Mettre à jour le fichier JSON avec les entrées
             await updatePresenceFile(result.entries);
-            
-            await interaction.reply({ 
-              content: `✅ Présence enregistrée pour ${result.entries.length} jour(s)`, 
-              flags: MessageFlags.Ephemeral 
+
+            await interaction.reply({
+              content: `✅ Présence enregistrée pour ${result.entries.length} jour(s)`,
+              flags: MessageFlags.Ephemeral
             });
           } catch (error) {
             console.error('❌ Error interpreting command:', error);
-            await interaction.reply({ 
-              content: '❌ Erreur lors de l\'interprétation de la commande', 
-              flags: MessageFlags.Ephemeral 
+            await interaction.reply({
+              content: '❌ Erreur lors de l\'interprétation de la commande',
+              flags: MessageFlags.Ephemeral
             });
           }
         } else if (commandName === 'absent') {
           console.log('🤖 Command /absent from', user.username, 'params:', interaction.options);
-          
+
           try {
-            const commandInterpreter = new CommandInterpreter();
-            const result = await commandInterpreter.interpretCommand(
+            const result = await interpretCommand(
               'absent',
-              interaction.options.map(opt => opt.value),
+              interaction.options.data.map(opt => opt.value?.toString() || ''),
               { id: user.id, username: user.username }
             );
-            
+
             // Mettre à jour le fichier JSON avec les entrées
             await updatePresenceFile(result.entries);
-            
-            await interaction.reply({ 
-              content: `✅ Absence enregistrée pour ${result.entries.length} jour(s)`, 
-              flags: MessageFlags.Ephemeral 
+
+            await interaction.reply({
+              content: `✅ Absence enregistrée pour ${result.entries.length} jour(s)`,
+              flags: MessageFlags.Ephemeral
             });
           } catch (error) {
             console.error('❌ Error interpreting command:', error);
-            await interaction.reply({ 
-              content: '❌ Erreur lors de l\'interprétation de la commande', 
-              flags: MessageFlags.Ephemeral 
+            await interaction.reply({
+              content: '❌ Erreur lors de l\'interprétation de la commande',
+              flags: MessageFlags.Ephemeral
             });
           }
         } else if (commandName === 'teletravail') {
           console.log('🤖 Command /teletravail from', user.username, 'params:', interaction.options);
-          
+
           try {
-            const commandInterpreter = new CommandInterpreter();
-            const result = await commandInterpreter.interpretCommand(
+            const result = await interpretCommand(
               'teletravail',
-              interaction.options.map(opt => opt.value),
+              interaction.options.data.map(opt => opt.value?.toString() || ''),
               { id: user.id, username: user.username }
             );
-            
+
             // Mettre à jour le fichier JSON avec les entrées
             await updatePresenceFile(result.entries);
-            
-            await interaction.reply({ 
-              content: `✅ Télétravail enregistré pour ${result.entries.length} jour(s)`, 
-              flags: MessageFlags.Ephemeral 
+
+            await interaction.reply({
+              content: `✅ Télétravail enregistré pour ${result.entries.length} jour(s)`,
+              flags: MessageFlags.Ephemeral
             });
           } catch (error) {
             console.error('❌ Error interpreting command:', error);
-            await interaction.reply({ 
-              content: '❌ Erreur lors de l\'interprétation de la commande', 
-              flags: MessageFlags.Ephemeral 
+            await interaction.reply({
+              content: '❌ Erreur lors de l\'interprétation de la commande',
+              flags: MessageFlags.Ephemeral
             });
           }
         } else if (commandName === 'qui-est-la') {
