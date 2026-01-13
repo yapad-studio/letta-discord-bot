@@ -22,17 +22,6 @@ interface PresencesData {
 
 // Constants
 const DATA_FILE = path.join(__dirname, '../../data/presences.json');
-const EMOJI_STATUS_MAP = {
-  '✅': 'present',
-  '❌': 'absent',
-  '🏠': 'teletravail'
-} as const;
-
-const STATUS_EMOJI_MAP = {
-  'present': '✅',
-  'absent': '❌',
-  'teletravail': '🏠'
-} as const;
 
 // Ensure data directory exists
 function ensureDataDir() {
@@ -76,19 +65,14 @@ function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-// Get tomorrow's date string in Guadeloupe timezone (GMT-4)
-export function getTomorrowDate(): string {
-  // Get current time in Guadeloupe timezone (GMT-4)
-  const GUADALOUPE_OFFSET = -4; // GMT-4
-  const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
-
-  // Get tomorrow in Guadeloupe time
-  const tomorrow = new Date(guadeloupeTime);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0];
+// Reset presences for a specific date
+export function resetPresences(date: string = getTodayDate()): void {
+  const data = loadPresences();
+  data[date] = {};
+  savePresences(data);
 }
+
+
 
 // Get presences for a specific date (default: today)
 export function getPresences(date: string = getTodayDate()): PresenceRecord[] {
@@ -126,119 +110,26 @@ export function setPresence(
   savePresences(data);
 }
 
-// Remove presence for a user (when they remove reaction)
-export function removePresence(userId: string): void {
-  const data = loadPresences();
-  const today = getTodayDate();
 
-  if (data[today] && data[today][userId]) {
-    delete data[today][userId];
-    savePresences(data);
+
+
+
+
+
+
+
+// Generate daily summary message (for posting in channel)
+export function generatePresenceSummary(date?: string): string {
+  if (!date) {
+    // Get tomorrow's date in Guadeloupe timezone
+    const GUADALOUPE_OFFSET = -4;
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
+    const tomorrow = new Date(guadeloupeTime);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    date = tomorrow.toISOString().split('T')[0];
   }
-}
-
-// Get presence for a specific user
-export function getPresenceForUser(userId: string, date: string = getTodayDate()): PresenceRecord | null {
-  const data = loadPresences();
-  return data[date]?.[userId] || null;
-}
-
-// Check if user has already reacted with a different emoji
-export function getUserCurrentStatus(userId: string, date: string = getTodayDate()): 'present' | 'absent' | 'teletravail' | null {
-  return getPresenceForUser(userId, date)?.status || null;
-}
-
-// Reset presences for a specific date
-export function resetPresences(date: string = getTodayDate()): void {
-  const data = loadPresences();
-  if (data[date]) {
-    delete data[date];
-    savePresences(data);
-  }
-}
-
-// Get emoji for a status
-export function getEmojiForStatus(status: string): string {
-  return STATUS_EMOJI_MAP[status as keyof typeof STATUS_EMOJI_MAP] || '❓';
-}
-
-// Get status for an emoji
-export function getStatusForEmoji(emoji: string): 'present' | 'absent' | 'teletravail' | null {
-  return EMOJI_STATUS_MAP[emoji as keyof typeof EMOJI_STATUS_MAP] || null;
-}
-
-// Check if emoji is a valid presence emoji
-export function isValidPresenceEmoji(emoji: string): boolean {
-  return Object.keys(EMOJI_STATUS_MAP).includes(emoji);
-}
-
-// Get Guadeloupe time from ISO string
-function getGuadeloupeTime(isoString: string): string {
-  const date = new Date(isoString);
-  
-  return date.toLocaleTimeString('fr-FR', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'America/Guadeloupe'
-  });
-}
-
-// Generate presence summary message
-export function generatePresenceRecap(date: string = getTodayDate()): string {
-  const presences = getPresences(date);
-  
-  const present = presences.filter(p => p.status === 'present');
-  const absent = presences.filter(p => p.status === 'absent');
-  const teletravail = presences.filter(p => p.status === 'teletravail');
-  
-  const today = new Date(date);
-  const dateStr = today.toLocaleDateString('fr-FR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  let message = `📍 **Récap Présences - ${dateStr}**\n\n`;
-  
-  if (present.length > 0) {
-    message += `**Présents (${present.length}) :**\n`;
-    present.forEach(p => {
-      const time = getGuadeloupeTime(p.timestamp);
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
-  }
-  
-  if (teletravail.length > 0) {
-    message += `**Télétravail (${teletravail.length}) :**\n`;
-    teletravail.forEach(p => {
-      const time = getGuadeloupeTime(p.timestamp);
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
-  }
-  
-  if (absent.length > 0) {
-    message += `**Absents (${absent.length}) :**\n`;
-    absent.forEach(p => {
-      const time = getGuadeloupeTime(p.timestamp);
-      message += `• ${p.username} (${time})\n`;
-    });
-    message += `\n`;
-  }
-  
-  // Add total counts
-  message += `**📊 Total :** ${presences.length} personnes\n`;
-  message += `• Présents : ${present.length}\n`;
-  message += `• Absents : ${absent.length}\n`;
-  message += `• Télétravail : ${teletravail.length}\n`;
-  
-  return message;
-}
-
-export function generatePresenceSummary(date: string = getTomorrowDate()): string {
   const presences = getPresences(date);
 
   const today = new Date(date);
@@ -249,26 +140,23 @@ export function generatePresenceSummary(date: string = getTomorrowDate()): strin
     day: 'numeric'
   });
 
-  let message = `📍 **Présences Bureau - ${dateStr}**\n\n`;
+  let message = `📍 **Présences Bureau - ${dateStr}**\\n\\n`;
 
-  // Message interactif au lieu de statistiques
-  message += `👋 **C'est l'heure de dire où tu seras demain !**\n\n`;
-  message += `Réagis avec :\n`;
-  message += `• ✅ **Présent au bureau**\n`;
-  message += `• ❌ **Absent**\n`;
-  message += `• 🏠 **Télétravail**\n\n`;
-  message += `Ou utilise les commandes slash :\n`;
-  message += `• /bureau → Présent au bureau\n`;
-  message += `• /absent → Absent\n`;
-  message += `• /teletravail → Télétravail\n\n`;
+  // Message rappel informatif uniquement
+  message += `👋 **Rappel : indique où tu seras demain !**\\n\\n`;
+  message += `Utilise les commandes slash :\\n`;
+  message += `• \`/bureau\` → Présent au bureau\\n`;
+  message += `• \`/absent\` → Absent\\n`;
+  message += `• \`/teletravail\` → Télétravail\\n\\n`;
+  message += `• \`/qui-est-la\` → Voir qui est présent\\n\\n`;
 
   // Optionnel : Afficher les réponses actuelles si il y en a
   if (presences.length > 0) {
-    message += `---\n\n`;
-    message += `**Réponses actuelles :**\n`;
-    message += `• Présents : ${presences.filter(p => p.status === 'present').length}\n`;
-    message += `• Absents : ${presences.filter(p => p.status === 'absent').length}\n`;
-    message += `• Télétravail : ${presences.filter(p => p.status === 'teletravail').length}\n`;
+    message += `---\\n\\n`;
+    message += `**Réponses actuelles :**\\n`;
+    message += `• Présents : ${presences.filter(p => p.status === 'present').length}\\n`;
+    message += `• Absents : ${presences.filter(p => p.status === 'absent').length}\\n`;
+    message += `• Télétravail : ${presences.filter(p => p.status === 'teletravail').length}\\n`;
   }
 
   return message;

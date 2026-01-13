@@ -2,14 +2,8 @@ import type { Client, Message, TextChannel, MessageReaction, User } from 'discor
 import {
   getPresences,
   setPresence,
-  removePresence,
-  getPresenceForUser,
-  getUserCurrentStatus,
-  isValidPresenceEmoji,
-  getStatusForEmoji,
   generatePresenceSummary,
-  initializePresences,
-  getEmojiForStatus
+  initializePresences
 } from '../services/presences';
 
 // Helper functions for date handling
@@ -77,111 +71,24 @@ function getTodayDate(): string {
 }
 
 
-// Type guard to ensure oldEmoji is a string
-function isValidEmoji(emoji: string | undefined): emoji is string {
-  return emoji !== undefined;
-}
-
-// React to a message with presence emojis
-async function addPresenceReactions(message: Message): Promise<void> {
-  try {
-    await message.react('✅'); // Présent
-    await message.react('❌'); // Absent
-    await message.react('🏠'); // Télétravail
-  } catch (error) {
-    console.error('❌ Error adding reactions:', error);
-  }
-}
-
-// Handle reaction add event
+// Handle reaction add event (no longer used - reactions are ignored)
 export async function handleReactionAdd(
   reaction: MessageReaction,
   user: User,
   client: Client
 ): Promise<void> {
-  // Ignore bot reactions
-  if (user.bot) return;
-
-  // Check if this is a presence message
-  const message = reaction.message;
-  if (!message || !message.author || message.author.id !== client.user?.id) return;
-
-  // Check if reaction is in presence channel
-  if (message.channel.id !== PRESENCE_CHANNEL_ID) return;
-
-  // Check if emoji is valid
-  const emoji = reaction.emoji.name;
-  if (!emoji || !isValidPresenceEmoji(emoji)) return;
-
-  const status = getStatusForEmoji(emoji);
-  if (!status) return;
-
-  try {
-    // Check if user already has a different status
-    const currentStatus = getUserCurrentStatus(user.id);
-    if (currentStatus && currentStatus !== status) {
-      // Remove old reaction from message
-      const oldEmoji = currentStatus ? getEmojiForStatus(currentStatus) : undefined;
-      if (oldEmoji && isValidEmoji(oldEmoji)) {
-        const oldReaction = reaction.message.reactions.cache.find(r =>
-          r.emoji.name === oldEmoji
-        );
-        if (oldReaction && oldReaction.users.cache.has(user.id)) {
-          await oldReaction.users.remove(user.id);
-        }
-      }
-    }
-
-    // Set new presence
-    // Récupérer la date du message (le message quotidien)
-    const messageDate = getMessageDate(reaction.message as Message<boolean>);
-    
-    // Enregistrer la présence pour la date du message (demain)
-    setPresence(user.id, user.username, status, messageDate);
-
-    // Update the daily message with current stats
-    await updateDailyMessage(client);
-
-    console.log(`✅ ${user.username} marked as ${status} for ${messageDate}`);
-  } catch (error) {
-    console.error('❌ Error handling reaction add:', error);
-  }
+  // No-op: reactions are deprecated, system now uses slash commands
+  return;
 }
 
-// Handle reaction remove event
+// Handle reaction remove event (no longer used - reactions are ignored)
 export async function handleReactionRemove(
   reaction: MessageReaction,
   user: User,
   client: Client
 ): Promise<void> {
-  // Ignore bot reactions
-  if (user.bot) return;
-
-  // Check if this is a presence message
-  const message = reaction.message;
-  if (!message || !message.author || message.author.id !== client.user?.id) return;
-
-  // Check if reaction is in presence channel
-  if (message.channel.id !== PRESENCE_CHANNEL_ID) return;
-
-  // Check if emoji is valid
-  const emoji = reaction.emoji.name;
-  if (!emoji || !isValidPresenceEmoji(emoji)) return;
-
-  try {
-    // Remove presence if user removes all reactions
-    const userHasReactions = message.reactions.cache.some(r =>
-      r.emoji.name != null && isValidPresenceEmoji(r.emoji.name) && r.users.cache.has(user.id)
-    );
-
-    if (!userHasReactions) {
-      removePresence(user.id);
-      await updateDailyMessage(client);
-      console.log(`❌ ${user.username} removed from presence`);
-    }
-  } catch (error) {
-    console.error('❌ Error handling reaction remove:', error);
-  }
+  // No-op: reactions are deprecated, system now uses slash commands
+  return;
 }
 
 // Post daily presence message
@@ -208,10 +115,7 @@ export async function postDailyMessage(client: Client): Promise<void> {
 
     // Post new message
     const summary = generatePresenceSummary(getTomorrowDate());
-    const message = await channel.send(summary);
-
-    // Add reactions
-    await addPresenceReactions(message);
+    await channel.send(summary);
 
     console.log('📅 Daily presence message posted');
   } catch (error) {
