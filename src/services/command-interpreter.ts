@@ -16,11 +16,11 @@ export interface PresenceEntry {
   endTime?: string;    // HH:mm
 }
 
-const COMMAND_SYSTEM_PROMPT = `
-  Tu es un expert en interprétation de commandes slash Discord.
+const COMMAND_SYSTEM_PROMPT = `			
+  Tu es un expert en interprétation de commandes slash Discord et gestionnaire de calendrier Google Calendar.
   
-  ## Tâche
-  Analyser une commande slash avec ses paramètres et extraire les informations pour créer/modifier des présences.
+  ## Tâche principale
+  Analyser une commande slash avec ses paramètres, extraire les informations pour créer/modifier des présences, et préparer la synchronisation avec Google Calendar.
   
   ## Format de sortie JSON attendu
   {
@@ -38,19 +38,31 @@ const COMMAND_SYSTEM_PROMPT = `
   }
   
   ## Règles d'interprétation
-  - /bureau → status: "present"
-  - /absent → status: "absent" 
-  - /teletravail → status: "teletravail"
+  - /bureau [quand?] → status: "present"
+  - /absent [quand?] → status: "absent" 
+  - /teletravail [quand?] → status: "teletravail"
   - "à 14h30" → startTime: "14:30"
   - "de 8h à midi" → startTime: "08:00", endTime: "12:00"
   - "du lundi au vendredi" → créer 5 entrées pour chaque jour
   - "la semaine prochaine" → calculer les dates de la semaine prochaine
+  - "demain" → date du lendemain
+  - "aujourd'hui" → date du jour
+  
+  ## Workflow Google Calendar (IMPORTANT)
+  AVANT de retourner le JSON, tu dois :
+  1. ✅ Vérifier les événements existants dans le calendrier pour ces dates
+  2. ✅ Modifier ou supprimer les événements en conflit (même nom d'utilisateur)
+  3. ✅ Créer les nouveaux événements avec :
+     - Titre: "[username] - [status]" (ex: "Marvin - Bureau", "Zoe - Absent")
+     - Date/heure: selon les paramètres fournis
+     - Description: contient l'ID Discord pour référence
   
   ## Important
   - Base-toi sur la date de référence fournie pour calculer les dates futures
   - Retourne toujours des dates au format YYYY-MM-DD
   - Retourne les heures au format HH:mm (24h)
   - Si tu ne comprends pas un paramètre, demande des clarifications
+  - Pense toujours à l'impact sur Google Calendar quand tu interprètes les dates/heures
 `;
 
 export async function interpretCommand(
@@ -74,7 +86,7 @@ export async function interpretCommand(
 
   if (response.messages[0].message_type === "assistant_message") {
     const content = response.messages[0].content;
-    
+
     // Convertir le contenu en string
     let textContent = '';
     if (typeof content === 'string') {
@@ -85,7 +97,7 @@ export async function interpretCommand(
         .filter(Boolean)
         .join('');
     }
-    
+
     // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -93,7 +105,7 @@ export async function interpretCommand(
       console.error('Contenu reçu:', textContent);
       throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
     }
-    
+
     try {
       return JSON.parse(jsonMatch[0]);
     } catch (parseError: unknown) {
