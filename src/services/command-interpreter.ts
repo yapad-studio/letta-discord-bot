@@ -3,8 +3,9 @@ import Letta from '@letta-ai/letta-client';
 import { AssistantMessage } from '@letta-ai/letta-client/resources/agents/messages';
 
 export interface CommandResult {
-  action: 'create' | 'update' | 'delete' | 'bulk_create';
+  action: 'create' | 'update' | 'delete' | 'bulk_create' | 'query';
   entries: PresenceEntry[];
+  queryResult?: QueryResult; // Pour les commandes de lecture (qui-est-la)
 }
 
 export interface PresenceEntry {
@@ -16,13 +17,20 @@ export interface PresenceEntry {
   endTime?: string;    // HH:mm
 }
 
+export interface QueryResult {
+  summary: string;     // Texte formaté à afficher
+  entries: PresenceEntry[]; // Données brutes si besoin
+}
+
 const COMMAND_SYSTEM_PROMPT = `			
   Tu es un expert en interprétation de commandes slash Discord et gestionnaire de calendrier Google Calendar.
   
   ## Tâche principale
-  Analyser une commande slash avec ses paramètres, extraire les informations pour créer/modifier des présences, et préparer la synchronisation avec Google Calendar.
+  Analyser une commande slash avec ses paramètres, extraire les informations pour créer/modifier des présences, ou interroger les présences existantes, et synchroniser avec Google Calendar.
   
   ## Format de sortie JSON attendu
+  
+  POUR LES COMMANDES D'ÉCRITURE (/bureau, /absent, /teletravail):
   {
     "action": "create" | "update" | "delete" | "bulk_create",
     "entries": [
@@ -37,10 +45,21 @@ const COMMAND_SYSTEM_PROMPT = `
     ]
   }
   
+  POUR LA COMMANDE DE LECTURE (/qui-est-la):
+  {
+    "action": "query",
+    "entries": [],
+    "queryResult": {
+      "summary": "Texte formaté avec les présences",
+      "entries": [ ... ]  // Liste détaillée si besoin
+    }
+  }
+  
   ## Règles d'interprétation
   - /bureau [quand?] → status: "present"
   - /absent [quand?] → status: "absent" 
   - /teletravail [quand?] → status: "teletravail"
+  - /qui-est-la [date?] → action: "query" + retourne les présences
   - "à 14h30" → startTime: "14:30"
   - "de 8h à midi" → startTime: "08:00", endTime: "12:00"
   - "du lundi au vendredi" → créer 5 entrées pour chaque jour
@@ -48,8 +67,9 @@ const COMMAND_SYSTEM_PROMPT = `
   - "demain" → date du lendemain
   - "aujourd'hui" → date du jour
   
-  ## Workflow Google Calendar (IMPORTANT)
-  AVANT de retourner le JSON, tu dois :
+  ## Workflow Google Calendar
+  
+  POUR LES COMMANDES D'ÉCRITURE:
   1. ✅ Vérifier les événements existants dans le calendrier pour ces dates
   2. ✅ Modifier ou supprimer les événements en conflit (même nom d'utilisateur)
   3. ✅ Créer les nouveaux événements avec :
@@ -57,12 +77,22 @@ const COMMAND_SYSTEM_PROMPT = `
      - Date/heure: selon les paramètres fournis
      - Description: contient l'ID Discord pour référence
   
+  POUR LA COMMANDE DE LECTURE (/qui-est-la):
+  1. ✅ Interroger Google Calendar pour la date demandée (ou aujourd'hui par défaut)
+  2. ✅ Filtrer les événements par utilisateur si un nom est précisé
+  3. ✅ Retourner un résumé formaté avec:
+     - Liste des présences par personne
+     - Heures de présence/absence/télétravail
+     - Format clair et lisible
+  
   ## Important
   - Base-toi sur la date de référence fournie pour calculer les dates futures
   - Retourne toujours des dates au format YYYY-MM-DD
   - Retourne les heures au format HH:mm (24h)
   - Si tu ne comprends pas un paramètre, demande des clarifications
   - Pense toujours à l'impact sur Google Calendar quand tu interprètes les dates/heures
+  - Pour /qui-est-la sans paramètre: retourne les présences du jour actuel
+  - Pour /qui-est-la avec date: retourne les présences pour cette date spécifique
 `;
 
 export async function interpretCommand(

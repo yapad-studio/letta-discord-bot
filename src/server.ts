@@ -35,22 +35,39 @@ async function handlePresenceCommand(
       { id: user.id, username: user.username }
     );
 
-    // Mettre à jour le fichier JSON avec les entrées
-    await updatePresenceFile(result.entries);
+    // Gestion selon le type de commande
+    if (result.action === 'query') {
+      // Commande de lecture (/qui-est-la)
+      if (result.queryResult) {
+        await interaction.followUp({
+          content: result.queryResult.summary,
+          flags: MessageFlags.Ephemeral
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ Erreur: Aucune donnée de query retournée',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+    } else {
+      // Commandes d'écriture (/bureau, /absent, /teletravail)
+      // Mettre à jour le fichier JSON avec les entrées
+      await updatePresenceFile(result.entries);
 
-    // Envoyer la confirmation finale
-    const statusMap = {
-      'bureau': 'Présence',
-      'absent': 'Absence',
-      'teletravail': 'Télétravail'
-    };
-    
-    const statusText = statusMap[commandName as keyof typeof statusMap] || 'Statut';
-    
-    await interaction.followUp({
-      content: `✅ ${statusText} enregistré(e) pour ${result.entries.length} jour(s)`,
-      flags: MessageFlags.Ephemeral
-    });
+      // Envoyer la confirmation finale
+      const statusMap = {
+        'bureau': 'Présence',
+        'absent': 'Absence',
+        'teletravail': 'Télétravail'
+      };
+
+      const statusText = statusMap[commandName as keyof typeof statusMap] || 'Statut';
+
+      await interaction.followUp({
+        content: `✅ ${statusText} enregistré(e) pour ${result.entries.length} jour(s)`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
   } catch (error) {
     console.error(`❌ Error in handlePresenceCommand (${commandName}):`, error);
     throw error;
@@ -563,9 +580,9 @@ app.listen(PORT, async () => {
       console.log(`🤖 Slash command: /${commandName} from ${user.username}`);
 
       try {
-        if (commandName === 'bureau' || commandName === 'absent' || commandName === 'teletravail') {
+        if (commandName === 'bureau' || commandName === 'absent' || commandName === 'teletravail' || commandName === 'qui-est-la') {
           console.log(`🤖 Command /${commandName} from`, user.username, 'params:', interaction.options);
-          
+
           // Répondre immédiatement pour éviter le timeout
           await interaction.reply({
             content: '⏳ Traitement de votre demande en cours...',
@@ -584,10 +601,6 @@ app.listen(PORT, async () => {
               console.error('❌ Could not send error message:', editError);
             }
           });
-        } else if (commandName === 'qui-est-la') {
-          const { generatePresenceRecap } = await import('./services/presences');
-          const summary = generatePresenceRecap();
-          await interaction.reply({ content: summary, flags: MessageFlags.Ephemeral });
         } else if (commandName === 'help-presences') {
           const msg = 'Commandes: /bureau, /absent, /teletravail, /qui-est-la, /help-presences';
           await interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
