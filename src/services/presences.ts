@@ -140,23 +140,23 @@ export function generatePresenceSummary(date?: string): string {
     day: 'numeric'
   });
 
-  let message = `📍 **Présences Bureau - ${dateStr}**\\n\\n`;
+  let message = `📍 **Présences Bureau - ${dateStr}**\n\n`;
 
   // Message rappel informatif uniquement
-  message += `👋 **Rappel : indique où tu seras demain !**\\n\\n`;
-  message += `Utilise les commandes slash :\\n`;
-  message += `• \`/bureau\` → Présent au bureau\\n`;
-  message += `• \`/absent\` → Absent\\n`;
-  message += `• \`/teletravail\` → Télétravail\\n\\n`;
-  message += `• \`/qui-est-la\` → Voir qui est présent\\n\\n`;
+  message += `👋 **Rappel : indique où tu seras demain !**\n\n`;
+  message += `Utilise les commandes slash :\n`;
+  message += `• \`/bureau\` → Présent au bureau\n`;
+  message += `• \`/absent\` → Absent\n`;
+  message += `• \`/teletravail\` → Télétravail\n\n`;
+  message += `• \`/qui-est-la\` → Voir qui est présent\n\n`;
 
   // Optionnel : Afficher les réponses actuelles si il y en a
   if (presences.length > 0) {
-    message += `---\\n\\n`;
-    message += `**Réponses actuelles :**\\n`;
-    message += `• Présents : ${presences.filter(p => p.status === 'present').length}\\n`;
-    message += `• Absents : ${presences.filter(p => p.status === 'absent').length}\\n`;
-    message += `• Télétravail : ${presences.filter(p => p.status === 'teletravail').length}\\n`;
+    message += `---\n\n`;
+    message += `**Réponses actuelles :**\n`;
+    message += `• Présents : ${presences.filter(p => p.status === 'present').length}\n`;
+    message += `• Absents : ${presences.filter(p => p.status === 'absent').length}\n`;
+    message += `• Télétravail : ${presences.filter(p => p.status === 'teletravail').length}\n`;
   }
 
   return message;
