@@ -112,7 +112,7 @@ export async function interpretCommand(
     Analyse cette commande et retourne uniquement le JSON structuré pour la mise à jour des présences.
   `;
 
-  const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: COMMAND_SYSTEM_PROMPT, role: "system" }, { content: prompt, role: 'user' }] });
+  const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: prompt, role: 'user' }] });
 
   // Parcourir tous les messages pour trouver le dernier assistant_message
   const assistantMessage = response.messages.find(msg => msg.message_type === "assistant_message");
