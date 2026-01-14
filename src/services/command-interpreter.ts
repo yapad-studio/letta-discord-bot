@@ -114,41 +114,44 @@ export async function interpretCommand(
 
   const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: COMMAND_SYSTEM_PROMPT, role: "system" }, { content: prompt, role: 'user' }] });
 
-  if (response.messages[0].message_type === "assistant_message") {
-    const content = response.messages[0].content;
-
-    // Convertir le contenu en string
-    let textContent = '';
-    if (typeof content === 'string') {
-      textContent = content;
-    } else if (Array.isArray(content)) {
-      textContent = content
-        .map(item => typeof item === 'string' ? item : (item as any).text)
-        .filter(Boolean)
-        .join('');
-    }
-
-    // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
-    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('❌ Erreur: Aucun JSON trouvé dans la réponse de l\'agent');
-      console.error('Contenu reçu:', textContent);
-      throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
-    }
-
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch (parseError: unknown) {
-      console.error('❌ Erreur: Le JSON extrait est invalide');
-      console.error('JSON extrait:', jsonMatch[0]);
-      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
-      throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
-    }
-  }
+  // Parcourir tous les messages pour trouver le dernier assistant_message
+  const assistantMessage = response.messages.find(msg => msg.message_type === "assistant_message");
   
-  // Si ce n'est pas un assistant_message, on retourne un objet par défaut
-  console.error('❌ Erreur: La réponse n\'est pas un assistant_message, type:', response.messages[0].message_type);
-  return { action: 'error', message: 'L\'agent n\'a pas retourné de réponse valide' };
+  if (!assistantMessage) {
+    console.error('❌ Erreur: Aucun assistant_message trouvé dans la réponse');
+    console.error('Types de messages reçus:', response.messages.map(m => m.message_type).join(', '));
+    return { action: 'error', message: 'L\'agent n\'a pas retourné de réponse valide' };
+  }
+
+  const content = assistantMessage.content;
+
+  // Convertir le contenu en string
+  let textContent = '';
+  if (typeof content === 'string') {
+    textContent = content;
+  } else if (Array.isArray(content)) {
+    textContent = content
+      .map(item => typeof item === 'string' ? item : (item as any).text)
+      .filter(Boolean)
+      .join('');
+  }
+
+  // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
+  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('❌ Erreur: Aucun JSON trouvé dans la réponse de l\'agent');
+    console.error('Contenu reçu:', textContent);
+    throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError: unknown) {
+    console.error('❌ Erreur: Le JSON extrait est invalide');
+    console.error('JSON extrait:', jsonMatch[0]);
+    const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
+  }
 }
 
 function getGuadeloupeDateTime(): { iso: string; local: string; timezone: string } {
