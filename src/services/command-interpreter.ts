@@ -145,6 +145,10 @@ export async function interpretCommand(
       throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
     }
   }
+  
+  // Si ce n'est pas un assistant_message, on retourne un objet par défaut
+  console.error('❌ Erreur: La réponse n\'est pas un assistant_message, type:', response.messages[0].message_type);
+  return { action: 'error', message: 'L\'agent n\'a pas retourné de réponse valide' };
 }
 
 function getGuadeloupeDateTime(): { iso: string; local: string; timezone: string } {
