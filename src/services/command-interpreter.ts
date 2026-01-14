@@ -123,7 +123,7 @@ export async function interpretCommand(
     return { action: 'error', message: 'L\'agent n\'a pas retourné de réponse valide' };
   }
 
-  const content = assistantMessage.content;
+  const content = (assistantMessage as any).content;
 
   // Convertir le contenu en string
   let textContent = '';
