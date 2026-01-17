@@ -11,6 +11,8 @@ RUN pnpm run build
 
 FROM node:20-alpine AS runtime
 
+
+RUN apk add --no-cache ffmpeg
 # Install pnpm
 RUN npm install -g pnpm
 
