@@ -198,16 +198,17 @@ async function drainMessageBatch(channelId: string) {
     const username = message.author.username;
     const userId = message.author.id;
     const content = message.content;
+    const timestamp = message.createdAt.toISOString();
 
     let prefix = '';
     if (messageType === MessageType.MENTION) {
-      prefix = `[${username} (id=${userId}) mentioned you]`;
+      prefix = `[${timestamp}] [${username} (id=${userId}) mentioned you]`;
     } else if (messageType === MessageType.REPLY) {
-      prefix = `[${username} (id=${userId}) replied to you]`;
+      prefix = `[${timestamp}] [${username} (id=${userId}) replied to you]`;
     } else if (messageType === MessageType.DM) {
-      prefix = `[${username} (id=${userId}) sent you a DM]`;
+      prefix = `[${timestamp}] [${username} (id=${userId}) sent you a DM]`;
     } else {
-      prefix = `[${username} (id=${userId})]`;
+      prefix = `[${timestamp}] [${username} (id=${userId})]`;
     }
 
     return `${idx + 1}. ${prefix} ${content}`;
@@ -303,7 +304,7 @@ async function sendSplitReply(message: OmitPartialGroupDMChannel<Message<boolean
     } else if (message.hasThread && message.thread) {
       thread = message.thread;
     } else {
-      const threadName = message.content.substring(0, 50) || 'Chat';
+      const threadName = message.cleanContent.substring(0, 50) || 'Chat';
       thread = await message.startThread({ name: threadName });
     }
 
