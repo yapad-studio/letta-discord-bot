@@ -91,99 +91,99 @@ export async function handleReactionRemove(
   return;
 }
 
-// Post daily presence message
-export async function postDailyMessage(client: Client): Promise<void> {
-  try {
-    const channel = await client.channels.fetch(PRESENCE_CHANNEL_ID) as TextChannel;
-    if (!channel) {
-      console.error('❌ Presence channel not found');
-      return;
-    }
+// // Post daily presence message
+// export async function postDailyMessage(client: Client): Promise<void> {
+//   try {
+//     const channel = await client.channels.fetch(PRESENCE_CHANNEL_ID) as TextChannel;
+//     if (!channel) {
+//       console.error('❌ Presence channel not found');
+//       return;
+//     }
+// 
+//     // Check if message already exists today
+//     const messages = await channel.messages.fetch({ limit: 10 });
+//     const today = new Date().toISOString().split('T')[0];
+//     const existingMessage = messages.find(msg =>
+//       msg.author && msg.author.id === client.user?.id &&
+//       msg.content.includes(today)
+//     );
+// 
+//     if (existingMessage) {
+//       console.log('📅 Daily message already posted today');
+//       return;
+//     }
+// 
+//     // Post new message
+//     const summary = generatePresenceSummary(getTomorrowDate());
+//     await channel.send(summary);
+// 
+//     console.log('📅 Daily presence message posted');
+//   } catch (error) {
+//     console.error('❌ Error posting daily message:', error);
+//   }
+// }
 
-    // Check if message already exists today
-    const messages = await channel.messages.fetch({ limit: 10 });
-    const today = new Date().toISOString().split('T')[0];
-    const existingMessage = messages.find(msg =>
-      msg.author && msg.author.id === client.user?.id &&
-      msg.content.includes(today)
-    );
+// // Update daily message with current stats
+// async function message.client(client: Client): Promise<void> {
+//   try {
+//     const channel = await client.channels.fetch(PRESENCE_CHANNEL_ID) as TextChannel;
+//     if (!channel) return;
+// 
+//     const messages = await channel.messages.fetch({ limit: 10 });
+//     const today = new Date().toISOString().split('T')[0];
+//     const dailyMessage = messages.find(msg =>
+//       msg.author && msg.author.id === client.user?.id &&
+//       msg.content.includes(today)
+//     );
+// 
+//     if (dailyMessage) {
+//       const summary = generatePresenceSummary(getTomorrowDate());
+//       await dailyMessage.edit(summary);
+//       console.log('📅 Daily message updated');
+//     }
+//   } catch (error) {
+//     console.error('❌ Error updating daily message:', error);
+//   }
+// }
 
-    if (existingMessage) {
-      console.log('📅 Daily message already posted today');
-      return;
-    }
+// // Schedule daily message
+// export function scheduleDailyMessage(client: Client): void {
+//   const now = new Date();
+//   const scheduledTime = new Date();
+//   scheduledTime.setHours(DAILY_MESSAGE_TIME.hour, DAILY_MESSAGE_TIME.minute, 0, 0);
+// 
+//   // If it's already past the scheduled time today, schedule for tomorrow
+//   if (now > scheduledTime) {
+//     scheduledTime.setDate(scheduledTime.getDate() + 1);
+//   }
+// 
+//   const delay = scheduledTime.getTime() - now.getTime();
+// 
+//   console.log(`📅 Scheduling daily message for ${scheduledTime.toLocaleString()}`);
+// 
+//   setTimeout(() => {
+//     postDailyMessage(client).then(() => {
+//       // Schedule next day
+//       scheduleDailyMessage(client);
+//     });
+//   }, delay);
+// }
 
-    // Post new message
-    const summary = generatePresenceSummary(getTomorrowDate());
-    await channel.send(summary);
-
-    console.log('📅 Daily presence message posted');
-  } catch (error) {
-    console.error('❌ Error posting daily message:', error);
-  }
-}
-
-// Update daily message with current stats
-async function updateDailyMessage(client: Client): Promise<void> {
-  try {
-    const channel = await client.channels.fetch(PRESENCE_CHANNEL_ID) as TextChannel;
-    if (!channel) return;
-
-    const messages = await channel.messages.fetch({ limit: 10 });
-    const today = new Date().toISOString().split('T')[0];
-    const dailyMessage = messages.find(msg =>
-      msg.author && msg.author.id === client.user?.id &&
-      msg.content.includes(today)
-    );
-
-    if (dailyMessage) {
-      const summary = generatePresenceSummary(getTomorrowDate());
-      await dailyMessage.edit(summary);
-      console.log('📅 Daily message updated');
-    }
-  } catch (error) {
-    console.error('❌ Error updating daily message:', error);
-  }
-}
-
-// Schedule daily message
-export function scheduleDailyMessage(client: Client): void {
-  const now = new Date();
-  const scheduledTime = new Date();
-  scheduledTime.setHours(DAILY_MESSAGE_TIME.hour, DAILY_MESSAGE_TIME.minute, 0, 0);
-
-  // If it's already past the scheduled time today, schedule for tomorrow
-  if (now > scheduledTime) {
-    scheduledTime.setDate(scheduledTime.getDate() + 1);
-  }
-
-  const delay = scheduledTime.getTime() - now.getTime();
-
-  console.log(`📅 Scheduling daily message for ${scheduledTime.toLocaleString()}`);
-
-  setTimeout(() => {
-    postDailyMessage(client).then(() => {
-      // Schedule next day
-      scheduleDailyMessage(client);
-    });
-  }, delay);
-}
-
-// Initialize presence system
-export function initializePresenceSystem(client: Client): void {
-  console.log('🚀 Initializing presence system...');
-
-  // Initialize data file
-  initializePresences();
-
-  // Post message for today if not already done
-  postDailyMessage(client);
-
-  // Schedule next message
-  scheduleDailyMessage(client);
-
-  console.log('✅ Presence system initialized');
-}
+// // Initialize presence system
+// export function initializePresenceSystem(client: Client): void {
+//   console.log('🚀 Initializing presence system...');
+// 
+//   // Initialize data file
+//   initializePresences();
+// 
+//   // Post message for today if not already done
+//   postDailyMessage(client);
+// 
+//   // Schedule next message
+//   scheduleDailyMessage(client);
+// 
+//   console.log('✅ Presence system initialized');
+// }
 
 // Handle reset command (admin only)
 export async function handleResetCommand(message: Message): Promise<void> {
@@ -202,7 +202,7 @@ export async function handleResetCommand(message: Message): Promise<void> {
     resetPresences(today);
 
     // Update daily message
-    await updateDailyMessage(message.client);
+    // await message.client(message.client);
 
     await message.reply('✅ Présences réinitialisées pour aujourd\'hui.');
   } catch (error) {
