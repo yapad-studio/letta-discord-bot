@@ -3,6 +3,8 @@ import express from 'express';
 import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction, MessageFlags } from 'discord.js';
 import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
 
+import { interpretCommand } from "./services/command-interpreter";
+
 // Helper function to update presence file
 async function updatePresenceFile(entries: any[]): Promise<void> {
   const { setPresence } = await import('./services/presences');
@@ -546,11 +548,8 @@ app.listen(PORT, async () => {
   try {
     console.log('🔐 Attempting Discord login...');
 
-    // Presence system reaction handlers
-    client.on('messageReactionAdd', async (reaction, user) => {
-      console.log('🔄 Reaction ADD:', reaction.emoji.name, 'by', user.username);
-      // Skip partial reactions and users
-      if (reaction.partial || !user || user.bot) return;
+    // Handle slash commands
+    client.on('interactionCreate', async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
 
       const commandName = interaction.commandName;
