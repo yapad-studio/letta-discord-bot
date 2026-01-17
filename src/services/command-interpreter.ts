@@ -112,38 +112,45 @@ export async function interpretCommand(
     Analyse cette commande et retourne uniquement le JSON structuré pour la mise à jour des présences.
   `;
 
-  const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: COMMAND_SYSTEM_PROMPT, role: "system" }, { content: prompt, role: 'user' }] });
+  const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: prompt, role: 'user' }] });
 
-  if (response.messages[0].message_type === "assistant_message") {
-    const content = response.messages[0].content;
+  // Parcourir tous les messages pour trouver le dernier assistant_message
+  const assistantMessage = response.messages.find(msg => msg.message_type === "assistant_message");
+  
+  if (!assistantMessage) {
+    console.error('❌ Erreur: Aucun assistant_message trouvé dans la réponse');
+    console.error('Types de messages reçus:', response.messages.map(m => m.message_type).join(', '));
+    return { action: 'error', message: 'L\'agent n\'a pas retourné de réponse valide' };
+  }
 
-    // Convertir le contenu en string
-    let textContent = '';
-    if (typeof content === 'string') {
-      textContent = content;
-    } else if (Array.isArray(content)) {
-      textContent = content
-        .map(item => typeof item === 'string' ? item : (item as any).text)
-        .filter(Boolean)
-        .join('');
-    }
+  const content = (assistantMessage as any).content;
 
-    // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
-    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('❌ Erreur: Aucun JSON trouvé dans la réponse de l\'agent');
-      console.error('Contenu reçu:', textContent);
-      throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
-    }
+  // Convertir le contenu en string
+  let textContent = '';
+  if (typeof content === 'string') {
+    textContent = content;
+  } else if (Array.isArray(content)) {
+    textContent = content
+      .map(item => typeof item === 'string' ? item : (item as any).text)
+      .filter(Boolean)
+      .join('');
+  }
 
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch (parseError: unknown) {
-      console.error('❌ Erreur: Le JSON extrait est invalide');
-      console.error('JSON extrait:', jsonMatch[0]);
-      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
-      throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
-    }
+  // Extraire le JSON du texte (gère les cas où l'agent ajoute du texte avant/après)
+  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('❌ Erreur: Aucun JSON trouvé dans la réponse de l\'agent');
+    console.error('Contenu reçu:', textContent);
+    throw new Error(`Aucun JSON trouvé dans la réponse. L'agent a retourné: "${textContent.substring(0, 200)}..."`);
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (parseError: unknown) {
+    console.error('❌ Erreur: Le JSON extrait est invalide');
+    console.error('JSON extrait:', jsonMatch[0]);
+    const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(`JSON invalide extrait de la réponse: ${errorMessage}`);
   }
 }
 

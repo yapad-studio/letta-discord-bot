@@ -2,9 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction, MessageFlags } from 'discord.js';
 import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
-// Presence system imports
-import { initializePresenceSystem, handleReactionAdd, handleReactionRemove } from './commands/presences';
-import { interpretCommand } from './services/command-interpreter';
+
+import { interpretCommand } from "./services/command-interpreter";
 
 // Helper function to update presence file
 async function updatePresenceFile(entries: any[]): Promise<void> {
@@ -146,7 +145,6 @@ client.once('ready', async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}!`);
 
   // Initialize presence system
-  initializePresenceSystem(client);
   if (MESSAGE_BATCH_ENABLED) {
     console.log(`📦 Message batching enabled: ${MESSAGE_BATCH_SIZE} messages or ${MESSAGE_BATCH_TIMEOUT_MS}ms timeout`);
   }
@@ -581,26 +579,6 @@ app.listen(PORT, async () => {
 
   try {
     console.log('🔐 Attempting Discord login...');
-
-    // Presence system reaction handlers
-    client.on('messageReactionAdd', async (reaction, user) => {
-      console.log('🔄 Reaction ADD:', reaction.emoji.name, 'by', user.username);
-      // Skip partial reactions and users
-      if (reaction.partial || !user || user.bot) return;
-      if ('username' in user && 'message' in reaction) {
-        await handleReactionAdd(reaction as MessageReaction, user as User, client);
-      }
-    });
-
-    client.on('messageReactionRemove', async (reaction, user) => {
-      console.log('🔄 Reaction REMOVE:', reaction.emoji.name, 'by', user.username);
-      // Skip partial reactions and users
-      if (reaction.partial || !user || user.bot) return;
-      if ('username' in user && 'message' in reaction) {
-        await handleReactionRemove(reaction as MessageReaction, user as User, client);
-      }
-    });
-
 
     // Handle slash commands
     client.on('interactionCreate', async (interaction) => {
