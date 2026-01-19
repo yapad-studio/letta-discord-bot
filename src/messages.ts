@@ -243,11 +243,11 @@ async function attachUserBlocks(
   const mentionedUserIds = extractDiscordUserIds(messageContent);
   const allUserIds = new Set([senderId, ...mentionedUserIds]);
   
-  console.log(`📦 Found ${allUserIds.size} users to attach blocks for: ${Array.from(allUserIds).join(', ')}`);
+  console.log(`📦 Found ${allUserIds.size} users to attach blocks for: ${Array.from(allUserIds.values()).join(', ')}`);
   
   const attachedBlockIds: string[] = [];
   
-  for (const userId of allUserIds) {
+  for (const userId of Array.from(allUserIds.values())) {
     const blockId = await getOrCreateUserBlock(userId);
     if (blockId) {
       const attached = await attachBlockToAgent(blockId);
@@ -362,7 +362,7 @@ async function extractImageAttachments(
   const images: ImageContentBlock[] = [];
   const supportedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
   
-  for (const [, attachment] of message.attachments) {
+  for (const attachment of Array.from(message.attachments.values())) {
     // Check size limit first (Discord provides size in bytes)
     if (attachment.size && attachment.size > IMAGE_MAX_SIZE_BYTES) {
       console.log(`🖼️  Skipping large image: ${attachment.name || 'unnamed'} (${(attachment.size / 1024 / 1024).toFixed(1)}MB > 5MB limit)`);
@@ -497,7 +497,7 @@ async function extractVoiceTranscription(
   }
   if (!checkFfmpegInstalled()) return null;
   
-  for (const [, attachment] of message.attachments) {
+  for (const attachment of Array.from(message.attachments.values())) {
     if (!isVoiceMessage(attachment)) continue;
     
     // Check size limit
