@@ -1,6 +1,5 @@
 // src/services/command-interpreter.ts
 import Letta from '@letta-ai/letta-client';
-import { AssistantMessage } from '@letta-ai/letta-client/resources/agents/messages';
 
 export interface CommandResult {
   action: 'create' | 'update' | 'delete' | 'bulk_create' | 'query';
@@ -109,14 +108,14 @@ export async function interpretCommand(
     Utilisateur: ${user.username} (${user.id})
     Date de référence: ${referenceDate.iso} (Guadeloupe: ${referenceDate.local})
     
-    Analyse cette commande et retourne uniquement le JSON structuré pour la mise à jour des présences.
+    Analyse cette commande, récupère les évènements du calendrier, crée ou modifie les évènement selon la commande et retourne UNIQUEMENT le JSON structuré pour la mise à jour des présences.
   `;
 
   const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: prompt, role: 'user' }] });
 
   // Parcourir tous les messages pour trouver le dernier assistant_message
   const assistantMessage = response.messages.find(msg => msg.message_type === "assistant_message");
-  
+
   if (!assistantMessage) {
     console.error('❌ Erreur: Aucun assistant_message trouvé dans la réponse');
     console.error('Types de messages reçus:', response.messages.map(m => m.message_type).join(', '));
