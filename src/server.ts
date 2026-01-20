@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageReaction, MessageFlags } from 'discord.js';
+import { Client, GatewayIntentBits, Message, OmitPartialGroupDMChannel, Partials, User, MessageFlags } from 'discord.js';
 import { sendMessage, sendTimerMessage, MessageType, splitMessage, cleanupUserBlocks } from './messages';
 
 import { interpretCommand } from "./services/command-interpreter";
@@ -465,14 +465,14 @@ client.on('messageCreate', async (message) => {
 
   // Thread conversations: handle ALL messages in thread uniformly (before mention/reply checks)
   // This ensures consistent batching behavior for all messages in the same thread
-  if (ENABLE_THREAD_CONVERSATIONS && 
-      THREAD_CONVERSATIONS_RESPOND_WITHOUT_MENTION && 
-      message.channel.isThread()) {
-    
+  if (ENABLE_THREAD_CONVERSATIONS &&
+    THREAD_CONVERSATIONS_RESPOND_WITHOUT_MENTION &&
+    message.channel.isThread()) {
+
     // Still detect message type for appropriate prefix to agent
     let messageType = MessageType.GENERIC;
     const isMentionInThread = message.mentions.has(client.user || '');
-    
+
     if (isMentionInThread) {
       messageType = MessageType.MENTION;
     } else if (message.reference?.messageId) {
@@ -486,7 +486,7 @@ client.on('messageCreate', async (message) => {
         // Ignore fetch errors, just use GENERIC
       }
     }
-    
+
     console.log(`📩 Thread conversation (${messageType}) from ${message.author.username}: ${message.content}`);
     processAndSendMessage(message, messageType);
     return;
