@@ -48,6 +48,12 @@ async function handlePresenceCommand(
           flags: MessageFlags.Ephemeral
         });
       }
+    } else if (result.action === 'error') {
+      // Gestion des erreurs retournées par interpretCommand
+      await interaction.followUp({
+        content: `❌ ${result.message}`,
+        flags: MessageFlags.Ephemeral
+      });
     } else {
       // Commandes d'écriture (/bureau, /absent, /teletravail)
       // Mettre à jour le fichier JSON avec les entrées
