@@ -42,7 +42,7 @@ export async function interpretCommand(
   const maxRetries = 2;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: prompt, role: 'user' }] });
+      const response = await client.agents.messages.create(process.env.COMMAND_AGENT_ID!, { messages: [{ content: prompt, role: 'user' }], streaming: false });
 
       // Parcourir tous les messages pour trouver le dernier assistant_message
       const assistantMessage = response.messages.find(msg => msg.message_type === "assistant_message");
