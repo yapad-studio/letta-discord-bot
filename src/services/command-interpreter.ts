@@ -35,7 +35,7 @@ export async function interpretCommand(
     Utilisateur: ${user.username} (${user.id})
     Date de référence: ${referenceDate.iso} (Guadeloupe: ${referenceDate.local})
     
-    Analyse cette commande, récupère les évènements du calendrier, crée ou modifie l'évènement selon la commande et retourne UNIQUEMENT le JSON structuré pour la mise à jour des présences.
+    Analyse cette commande, récupère les évènements depuis google calendar avec get_events, et crée ou modifie l'évènement selon la commande. Réponds UNIQUEMENT le JSON structuré pour la mise à jour des présences.
   `;
 
   // Retry logic for API validation errors (e.g., finish_reason null)
@@ -98,15 +98,10 @@ export async function interpretCommand(
 }
 
 function getGuadeloupeDateTime(): { iso: string; local: string; timezone: string } {
-  const GUADALOUPE_OFFSET = -4; // GMT-4
   const now = new Date();
-
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const guadeloupeTime = new Date(utc + (GUADALOUPE_OFFSET * 3600000));
-
   return {
     iso: now.toISOString(),
-    local: guadeloupeTime.toLocaleString('fr-FR', {
+    local: now.toLocaleString('fr-FR', {
       timeZone: 'America/Guadeloupe',
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit'
